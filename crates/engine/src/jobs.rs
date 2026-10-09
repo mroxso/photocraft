@@ -612,6 +612,10 @@ impl Session {
         if let Some(why) = self.job_conflict(id, spec.journal) {
             return Err(EngineError::Disabled(id.to_string(), why));
         }
+        // Painting on or moving a hidden layer is refused, as in Photoshop (#571).
+        if let Some(why) = crate::hidden_target::refusal(self, id, &params) {
+            return Err(EngineError::Other(why.into()));
+        }
         self.coalesce_request = params.get("coalesce").and_then(Value::as_str).map(str::to_string);
         self.color_restrict = crate::channel_cmds::color_restriction(self, id, &run_params);
         self.jobs.spawn = background;
@@ -700,13 +704,18 @@ impl Session {
         };
         self.coalesce_request = None;
         self.color_restrict = None;
+        // Finish successful command bookkeeping on the document the job edited.
+        // Restoring the viewed document first would attribute Fade and slice updates
+        // to that document instead, when the user switched tabs mid-job.
+        if r.is_ok() {
+            self.after_command(command, params.clone(), *journal);
+        }
         // Keep the user's active document unless the job opened a new one.
+        // This also restores the selection when the apply step returned an error.
         if target.is_some() && self.active == target {
             self.active = prev_active.filter(|i| *i < self.docs.len()).or(self.active);
         }
-        let v = r?;
-        self.after_command(command, params.clone(), *journal);
-        Ok(v)
+        r
     }
 
     fn end_job(&mut self, job: &Running, outcome: JobOutcome) {

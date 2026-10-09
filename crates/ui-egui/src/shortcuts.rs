@@ -280,6 +280,17 @@ pub fn handle(app: &mut PhotocraftApp, ctx: &egui::Context) {
     if focus == Focus::None && crate::move_mods::arrow_keys(app, ctx) {
         return;
     }
+    // Moved pixels still floating: ↩ drops them.
+    if focus == Focus::None
+        && app.session.active().is_some_and(|st| photocraft_engine::float_cmds::floating(st).is_some())
+        && ctx.input_mut(|i| i.consume_key(Modifiers::NONE, Key::Enter))
+    {
+        if let Err(e) = app.run("select.drop", json!({})) {
+            app.ui.status = e;
+            app.ui.status_error = true;
+        }
+        return;
+    }
     // Pen path in progress: ↩ finishes (open path), Esc cancels.
     if app.ui.pen.is_some() {
         if ctx.input_mut(|i| i.consume_key(Modifiers::NONE, Key::Enter)) {
@@ -295,6 +306,24 @@ pub fn handle(app: &mut PhotocraftApp, ctx: &egui::Context) {
     // [ ] change the detection width (not the brush size).
     if crate::magnetic_lasso_ui::keys(app, ctx) {
         return;
+    }
+    // While placing polygonal lasso vertices, Backspace/Delete retracts the last point;
+    // it must win over the regular Edit › Clear shortcut, which edits document pixels.
+    if crate::lasso_ui::waiting_for_vertex(app) {
+        let mods = ctx.input(|i| i.modifiers);
+        if !mods.command && !mods.ctrl && !mods.shift && ctx.input_mut(|i| i.consume_key(mods, Key::Backspace) || i.consume_key(mods, Key::Delete)) {
+            crate::lasso_ui::undo_last_vertex(app);
+            return;
+        }
+    }
+    // The Polygonal Lasso tool likewise: ⌫/Delete removes the last vertex (#1229), and never
+    // reaches Edit › Clear while a polygon is being drawn.
+    if !app.ui.polygon.is_empty() {
+        let mods = ctx.input(|i| i.modifiers);
+        if !mods.command && !mods.ctrl && !mods.shift && ctx.input_mut(|i| i.consume_key(mods, Key::Backspace) || i.consume_key(mods, Key::Delete)) {
+            crate::canvas::polygon_retract(app);
+            return;
+        }
     }
     // Inline type editing eats text and navigation keys; ⌘-shortcuts still reach the menus.
     let editing = crate::type_tool::handle_keys(app, ctx);
