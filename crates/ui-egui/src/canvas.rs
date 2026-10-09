@@ -2489,6 +2489,10 @@ pub fn canvas_view(app: &mut PhotocraftApp, ui: &mut egui::Ui, idx: usize, rect:
                 Tool::PolygonLasso if response.double_clicked() || response.triple_clicked() => commit_polygon(app),
                 // The same for the Magnetic Lasso: along the edges, or straight with ⌥.
                 Tool::MagneticLasso if response.double_clicked() || response.triple_clicked() => crate::magnetic_lasso_ui::close(app, mods.alt),
+                // Double-clicking commits the crop, as in Photoshop (#2037). The first click's
+                // press-release pair only touches the frame; an untouched default frame commits
+                // nothing, as with ↵. egui counts a third quick click as a triple, not a double.
+                Tool::Crop if response.double_clicked() || response.triple_clicked() => commit_crop(app),
                 _ => {
                     if tool == Tool::Move && app.ui.transform.is_none() {
                         begin_transform_controls_at(app, &ctx, &xf, p);

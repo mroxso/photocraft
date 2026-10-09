@@ -6,7 +6,7 @@
 //! - on an edge or corner, a drag resizes it; ⇧ keeps the frame's aspect ratio, ⌥ resizes about
 //!   the centre, and an options-bar ratio preset always holds.
 //!
-//! ↵ commits (`image.crop`, see `canvas::commit_crop`) and Esc cancels. The pending frame lives in
+//! ↵ or a double-click commits (`image.crop`, see `canvas::commit_crop`) and Esc cancels. The pending frame lives in
 //! `UiState::crop_rect`, so the control channel reads it. `image.crop` has no angle, so dragging
 //! outside the frame draws a new one rather than rotating it.
 //!
@@ -541,6 +541,51 @@ mod tests {
         assert_eq!(st.ui.crop_rect, Some(moved));
         assert_eq!(st.ui.views[0].center, view.center, "the view did not pan");
         assert!(st.crop.drag.is_none());
+    }
+
+    /// #2037: double-clicking with the Crop tool commits the crop, as in Photoshop.
+    #[test]
+    fn double_click_on_the_canvas_commits_the_crop() {
+        use egui::{Event, PointerButton, pos2};
+        let mut a = app(SampleType::U8);
+        let view = crate::state::View { zoom: 1.0, center: [100.0, 50.0], fit_pending: false, fill_pending: false, doc_size: [200, 100], rotation: 0.0 };
+        a.ui.views = vec![view];
+        let mut h = egui_kittest::Harness::builder().with_size(egui::vec2(600.0, 400.0)).with_step_dt(1.0 / 60.0).build_ui_state(
+            |ui, app: &mut PhotocraftApp| {
+                let v = app.ui.views[0].clone();
+                crate::canvas::canvas_view(app, ui, 0, ui.max_rect(), v, true);
+            },
+            a,
+        );
+        h.run_steps(2);
+        let button = |pos, pressed| Event::PointerButton { pos, button: PointerButton::Primary, pressed, modifiers: Modifiers::NONE };
+        // Document point (x, y) sits at screen (200 + x, 150 + y): the 200x100 doc centred in 600x400.
+        // Draw a frame from (20, 20) to (80, 60).
+        let (p0, p1) = (pos2(220.0, 170.0), pos2(280.0, 210.0));
+        h.event(Event::PointerMoved(p0));
+        h.event(button(p0, true));
+        h.step();
+        for p in [pos2(250.0, 190.0), p1] {
+            h.event(Event::PointerMoved(p));
+            h.step();
+        }
+        h.event(button(p1, false));
+        h.step();
+        assert_eq!(h.state().ui.crop_rect, Some([20.0, 20.0, 80.0, 60.0]));
+        let steps = h.state().session.active().unwrap().history.past_len();
+        // A double-click inside the frame commits it.
+        let pc = pos2(250.0, 190.0);
+        for _ in 0..2 {
+            h.event(Event::PointerMoved(pc));
+            h.step();
+            h.event(button(pc, true));
+            h.step();
+            h.event(button(pc, false));
+            h.step();
+        }
+        let st = h.state();
+        assert_eq!(st.session.active().unwrap().doc.size, Size::new(60, 40), "the frame was cropped");
+        assert_eq!(st.session.active().unwrap().history.past_len(), steps + 1, "one Crop step");
     }
 
     #[test]
