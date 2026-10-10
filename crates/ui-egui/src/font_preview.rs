@@ -13,7 +13,9 @@ const WIDTH: f32 = 100.0;
 const HEIGHT: f32 = 24.0;
 const CACHE_LIMIT: usize = 128;
 
-type Key = (String, u32);
+/// Family, display scale, and the font database generations, so a family installed or fetched
+/// (served fonts) after its first miss gets a sample once it is available.
+type Key = (String, u32, (u64, u64));
 #[derive(Clone, Default)]
 struct Cache(VecDeque<(Key, Option<TextureHandle>)>);
 
@@ -52,7 +54,7 @@ fn image(engine: &mut photocraft_text::TextEngine, family: &str, scale: u32) -> 
 pub(crate) fn paint(ui: &egui::Ui, family: &str, row: Rect) {
     let ctx = ui.ctx();
     let scale = ctx.pixels_per_point().ceil().clamp(1.0, 4.0) as u32;
-    let key = (family.to_owned(), scale);
+    let key = (family.to_owned(), scale, (photocraft_text::fonts::generation(), photocraft_text::served::generation()));
     let id = egui::Id::new("font-menu-previews");
     let cached = ctx.data_mut(|d| {
         let cache = d.get_temp_mut_or_default::<Cache>(id);

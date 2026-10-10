@@ -496,7 +496,7 @@ fn options_editor(app: &mut PhotocraftApp, ui: &mut egui::Ui, paragraph: bool, s
 /// Searchable family combo box.
 fn family_picker(ui: &mut egui::Ui, salt: &str, current: &mut String) -> bool {
     let mut shown = if current.is_empty() { photocraft_text::fonts::DEFAULT_FAMILY.to_string() } else { current.clone() };
-    let changed = crate::type_tool::family_picker_in(ui, salt, &mut shown, 140.0, crate::type_tool::families());
+    let changed = crate::type_tool::family_picker_in(ui, salt, &mut shown, 140.0, &crate::type_tool::families());
     if changed {
         *current = shown;
     }
@@ -518,8 +518,7 @@ fn glyph_font(app: &PhotocraftApp) -> (String, String) {
         && let Some(r) = tl.char_runs().first()
     {
         let fam = if r.style.font_family.is_empty() { photocraft_text::fonts::DEFAULT_FAMILY.to_string() } else { r.style.font_family.clone() };
-        let style =
-            if r.style.font_style.is_empty() { if r.style.italic { tl!("Italic").into() } else { tl!("Regular").into() } } else { r.style.font_style.clone() };
+        let style = crate::type_tool::selected_style(&r.style);
         return (fam, style);
     }
     (photocraft_text::fonts::DEFAULT_FAMILY.into(), tl!("Regular").into())
@@ -554,7 +553,7 @@ fn charmap(ctx: &egui::Context, family: &str, style: &str) -> std::sync::Arc<Vec
         return v;
     }
     let st = char_style_for(family, style);
-    let v = std::sync::Arc::new(photocraft_text::shared().lock().unwrap_or_else(|e| e.into_inner()).fonts.charmap(family, st.weight, st.italic));
+    let v = std::sync::Arc::new(photocraft_text::shared().lock().unwrap_or_else(|e| e.into_inner()).fonts.charmap_for_style(&st));
     ctx.data_mut(|d| d.insert_temp(id, v.clone()));
     v
 }
