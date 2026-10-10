@@ -456,8 +456,10 @@ pub fn handle(app: &mut PhotocraftApp, ctx: &egui::Context) {
     // dialogs and inline type returned above, transform, pen, lasso and crop consumed it, and
     // these own theirs: full screen (Esc returns), the palette, the canvas and layer menus, the
     // brush picker, Rotate View, Adaptive Wide Angle, the Filter Gallery, the TIFF prompt, any
-    // open egui popup and the toolbar tool flyout.
+    // open egui popup and the toolbar tool flyout. A canvas drag in progress (a marquee being
+    // drawn) keeps the selection too.
     let esc_taken = app.ui.view.hides_chrome()
+        || app.drag.is_some()
         || app.ui.palette_open
         || app.ui.canvas_tool_menu.is_some()
         || app.ui.layer_menu.is_some()
