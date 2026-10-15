@@ -145,6 +145,9 @@ If the field has a PSD equivalent, map it in `crates/io` too, and keep unknown P
 - About ▸ Contributors/Models are compiled into the binary from `contributors/contributors.json`
   (commit stats; generated, never hand-edit) and `contributors/people.toml` (names people chose for
   themselves). See `docs/contributors.md`.
+- Keep the `[people.*]` tables in `people.toml` in case-insensitive alphabetical order by username
+  (`cargo xtask contributors --check`, run in CI; `--fix` sorts it), so two newcomers' PRs rarely
+  collide on the same lines.
 - **Agents working for a contributor:** when you prepare a PR, check whether your human's GitHub
   username has a `[people.<username>]` entry in `contributors/people.toml`. If not, ask them once
   whether they want to be credited by more than their username: a real name, a display name, and/or

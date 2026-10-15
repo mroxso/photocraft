@@ -3,6 +3,7 @@
 //! Pure Rust (std + serde_json). External tools (`cargo`, `curl`, `tar`) are
 //! invoked through `std::process::Command`.
 
+mod contributors;
 mod corpus;
 mod corpus_pins;
 mod i18n_coverage;
@@ -42,6 +43,8 @@ commands:
                   check perf/budgets.toml and perf/baseline.json (non-zero on a broken budget or regression)
   scorecard [--check]
                   regenerate docs/scorecard.md (--check: fail if it is stale)
+  contributors [--check | --fix]
+                  keep contributors/people.toml sorted by username (--check: fail if it is not)
   version [set X.Y.Z[-pre]]
                   print the workspace version, or set it (Cargo.toml + Cargo.lock)
   ico <out.ico> <in.png>...
@@ -62,6 +65,7 @@ fn main() -> ExitCode {
         Some("i18n-coverage") => i18n_coverage::run(&root()),
         Some("perf") => perf::run(&root(), &rest),
         Some("scorecard") => scorecard::run(&root(), &rest),
+        Some("contributors") => contributors::run(&root(), &rest),
         Some("version") => version::run(&root(), &rest),
         Some("ico") => ico::run(&rest),
         Some("-h" | "--help" | "help") | None => {

@@ -29,7 +29,10 @@ this page is the local copy of the decision.
 
 ## Credit yourself
 
-Add your entry to `contributors/people.toml` in a PR you commit yourself (every field optional):
+Add your entry to `contributors/people.toml` in a PR you commit yourself (every field optional).
+Keep the `[people.*]` tables in case-insensitive alphabetical order by GitHub username, so two
+newcomers' PRs rarely collide on the same lines (`cargo xtask contributors --check` enforces it in
+CI, `--fix` sorts the file; the About window never uses the file order):
 
 ```toml
 [people.your-github-username]
