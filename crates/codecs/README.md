@@ -188,8 +188,9 @@ embedded table (and a PNG's transparent entry) so `photocraft-io` can open them 
 * **EXIF in TIFF** is stored as sub-IFDs rather than a blob: reading rebuilds an EXIF block
   from the file's Exif (34665) and GPS (34853) directories plus IFD0's descriptive tags, and
   writing copies those directories back, so tags PhotoCraft doesn't know survive when they fit
-  the reader's copy limits (at most 1024 entries and 4 MiB of values per directory; oversized
-  or excess values are dropped). Values are
+  the reader's copy limits (at most 1024 entries per directory, and 4 MiB of copied values
+  combined across IFD0, GPS and Exif for one TIFF stream; oversized or excess values are
+  dropped). Values are
   copied as bytes (re-ordered when the byte orders differ). An EXIF block is read as classic
   TIFF only (its offsets are 4 bytes).
 * **Orientation** (EXIF tag 274 in JPEG, PNG `eXIf` and WebP; the decoded page's tag in TIFF and
