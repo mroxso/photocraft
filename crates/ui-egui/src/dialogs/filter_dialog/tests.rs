@@ -1620,11 +1620,7 @@ fn replace_color_result_swatch_click_leaves_the_sliders_alone_until_a_pick() {
     h.run_steps(3);
     let f = h.state_mut().ui.dialog_mut(id).unwrap().fields.clone();
     // Grey (s = 0) to #80ff80 (h = 120°, full saturation, lightness up): the shift the sliders take.
-    assert_eq!(
-        (f["hue"].clone(), f["saturation"].clone(), f["lightness"].clone()),
-        (json!(120.0), json!(100.0), json!(50.0)),
-        "a real pick sets the sliders"
-    );
+    assert_eq!((f["hue"].clone(), f["saturation"].clone(), f["lightness"].clone()), (json!(120.0), json!(100.0), json!(50.0)), "a real pick sets the sliders");
     assert!(!f.contains_key(RESULT_PICKED) && !f.contains_key(RESULT_FROM), "the pick is consumed");
 }
 
